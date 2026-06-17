@@ -45,7 +45,7 @@ class AppConfig {
   static const _dev = EnvironmentConfig(
     environment: AppEnvironment.dev,
     name: 'dev',
-    baseUrl: 'http://10.0.2.2:3000',
+    baseUrl: 'http://localhost:3000',
   );
 
   static const _staging = EnvironmentConfig(

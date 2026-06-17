@@ -100,38 +100,58 @@ class MarkdownTableView extends StatelessWidget {
                   scrollDirection: Axis.horizontal,
                   child: SizedBox(
                     width: tableWidth,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _MarkdownTableRow(
-                          cells: headers,
-                          cellWidth: cellWidth,
-                          firstCellWidth: firstCellWidth,
-                          backgroundColor: colorScheme.primaryContainer,
-                          borderColor: colorScheme.outlineVariant.withValues(
-                            alpha: 0.8,
+                    child: Table(
+                      columnWidths: {
+                        for (var index = 0; index < columnCount; index++)
+                          index: FixedColumnWidth(
+                            index == 0 ? firstCellWidth : cellWidth,
                           ),
-                          textColor: colorScheme.onPrimaryContainer,
-                          isHeader: true,
-                          isLastRow: rows.isEmpty,
+                      },
+                      defaultVerticalAlignment:
+                          TableCellVerticalAlignment.middle,
+                      border: TableBorder.symmetric(
+                        inside: BorderSide(
+                          color: colorScheme.outlineVariant.withValues(
+                            alpha: 0.6,
+                          ),
+                        ),
+                      ),
+                      children: [
+                        TableRow(
+                          decoration: BoxDecoration(
+                            color: colorScheme.primaryContainer,
+                          ),
+                          children: [
+                            for (final cell in _normalizeCellCount(
+                              headers,
+                              columnCount,
+                            ))
+                              _buildCell(
+                                context,
+                                text: cell,
+                                textColor: colorScheme.onPrimaryContainer,
+                                isHeader: true,
+                              ),
+                          ],
                         ),
                         for (var index = 0; index < rows.length; index++)
-                          _MarkdownTableRow(
-                            cells: _normalizeCellCount(
-                              rows[index],
-                              headers.length,
+                          TableRow(
+                            decoration: BoxDecoration(
+                              color: index.isEven
+                                  ? colorScheme.surface
+                                  : colorScheme.surfaceContainerLowest,
                             ),
-                            cellWidth: cellWidth,
-                            firstCellWidth: firstCellWidth,
-                            backgroundColor: index.isEven
-                                ? colorScheme.surface
-                                : colorScheme.surfaceContainerLowest,
-                            borderColor: colorScheme.outlineVariant.withValues(
-                              alpha: 0.58,
-                            ),
-                            textColor: colorScheme.onSurface,
-                            isLastRow: index == rows.length - 1,
+                            children: [
+                              for (final cell in _normalizeCellCount(
+                                rows[index],
+                                columnCount,
+                              ))
+                                _buildCell(
+                                  context,
+                                  text: cell,
+                                  textColor: colorScheme.onSurface,
+                                ),
+                            ],
                           ),
                       ],
                     ),
@@ -155,6 +175,31 @@ class MarkdownTableView extends StatelessWidget {
     );
   }
 
+  Widget _buildCell(
+    BuildContext context, {
+    required String text,
+    required Color textColor,
+    bool isHeader = false,
+  }) {
+    final style = Theme.of(context).textTheme.bodySmall?.copyWith(
+      color: textColor.withValues(alpha: isHeader ? 0.95 : 0.85),
+      height: 1.4,
+      fontSize: 13.5,
+      fontWeight: isHeader ? FontWeight.w600 : FontWeight.w400,
+    );
+
+    return ConstrainedBox(
+      constraints: BoxConstraints(minHeight: isHeader ? 48 : 44),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Text(text.isEmpty ? '—' : text, style: style, softWrap: true),
+        ),
+      ),
+    );
+  }
+
   static List<String> _normalizeCellCount(List<String> cells, int count) {
     if (cells.length == count) {
       return cells;
@@ -163,68 +208,6 @@ class MarkdownTableView extends StatelessWidget {
       return cells.take(count).toList();
     }
     return <String>[...cells, ...List.filled(count - cells.length, '')];
-  }
-}
-
-class _MarkdownTableRow extends StatelessWidget {
-  const _MarkdownTableRow({
-    required this.cells,
-    required this.cellWidth,
-    required this.firstCellWidth,
-    required this.backgroundColor,
-    required this.borderColor,
-    required this.textColor,
-    required this.isLastRow,
-    this.isHeader = false,
-  });
-
-  final List<String> cells;
-  final double cellWidth;
-  final double firstCellWidth;
-  final Color backgroundColor;
-  final Color borderColor;
-  final Color textColor;
-  final bool isLastRow;
-  final bool isHeader;
-
-  @override
-  Widget build(BuildContext context) {
-    final style = Theme.of(context).textTheme.bodySmall?.copyWith(
-      color: textColor.withValues(alpha: isHeader ? 0.95 : 0.85),
-      height: 1.4,
-      fontSize: 13.5,
-      fontWeight: isHeader ? FontWeight.w600 : FontWeight.w400,
-    );
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        for (var index = 0; index < cells.length; index++)
-          Container(
-            width: index == 0 ? firstCellWidth : cellWidth,
-            constraints: BoxConstraints(minHeight: isHeader ? 48 : 44),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-            decoration: BoxDecoration(
-              color: backgroundColor,
-              border: Border(
-                right: index == cells.length - 1
-                    ? BorderSide.none
-                    : BorderSide(color: borderColor),
-                bottom: isLastRow
-                    ? BorderSide.none
-                    : BorderSide(color: borderColor),
-              ),
-            ),
-            child: Text(
-              cells[index].isEmpty ? '—' : cells[index],
-              style: style,
-              softWrap: true,
-              overflow: TextOverflow.ellipsis,
-              maxLines: 2,
-            ),
-          ),
-      ],
-    );
   }
 }
 
