@@ -1,0 +1,44 @@
+PODS:
+  - amazon_connect_chat_flutter (0.0.1):
+    - AmazonConnectChatIOS (~> 2.0.13)
+    - Flutter
+  - AmazonConnectChatIOS (2.0.13):
+    - AWSConnectParticipant
+  - AWSConnectParticipant (2.41.0):
+    - AWSCore (= 2.41.0)
+  - AWSCore (2.41.0)
+  - Flutter (1.0.0)
+  - webview_flutter_wkwebview (0.0.1):
+    - Flutter
+    - FlutterMacOS
+
+DEPENDENCIES:
+  - amazon_connect_chat_flutter (from `.symlinks/plugins/amazon_connect_chat_flutter/ios`)
+  - Flutter (from `Flutter`)
+  - webview_flutter_wkwebview (from `.symlinks/plugins/webview_flutter_wkwebview/darwin`)
+
+SPEC REPOS:
+  trunk:
+    - AmazonConnectChatIOS
+    - AWSConnectParticipant
+    - AWSCore
+
+EXTERNAL SOURCES:
+  amazon_connect_chat_flutter:
+    :path: ".symlinks/plugins/amazon_connect_chat_flutter/ios"
+  Flutter:
+    :path: Flutter
+  webview_flutter_wkwebview:
+    :path: ".symlinks/plugins/webview_flutter_wkwebview/darwin"
+
+SPEC CHECKSUMS:
+  amazon_connect_chat_flutter: 6ef93421a6e1fb66e7e75eef1a5b896c716e45c3
+  AmazonConnectChatIOS: 9f5c976cd5fc17889141ea369b53d24968636edc
+  AWSConnectParticipant: 0eaad57a1454ff6e5f9e036c467a10254f5dbb1a
+  AWSCore: ee7594bda3132cde8666328bf9a09d8770c1c100
+  Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
+  webview_flutter_wkwebview: 8ebf4fded22593026f7dbff1fbff31ea98573c8d
+
+PODFILE CHECKSUM: 78bd67bfce054bd10a1ee71a007f6eac37366766
+
+COCOAPODS: 1.16.2

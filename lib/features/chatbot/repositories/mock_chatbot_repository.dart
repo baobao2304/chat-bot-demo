@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import '../../../core/logging/app_logger.dart';
 import 'chatbot_repository.dart';
 
 class MockChatbotRepository implements ChatbotRepository {
@@ -13,6 +14,16 @@ class MockChatbotRepository implements ChatbotRepository {
     String? conversationId,
     Map<String, dynamic>? metadata,
   }) async {
+    AppLogger.info(
+      'MockChatbotRepository',
+      'sendMessage started',
+      <String, Object?>{
+        'message': message,
+        'conversationId': conversationId,
+        'metadata': metadata,
+        'delayMs': delay.inMilliseconds,
+      },
+    );
     await Future<void>.delayed(delay);
 
     final normalized = message.trim().toLowerCase();
@@ -29,9 +40,19 @@ class MockChatbotRepository implements ChatbotRepository {
         'Mình đã nhận: "$message". Đây là phản hồi mock để bạn demo UI trước khi nối backend thật.',
     };
 
-    return ChatbotReply(
+    final chatbotReply = ChatbotReply(
       reply: reply,
       conversationId: conversationId ?? 'demo-conversation',
     );
+    AppLogger.info(
+      'MockChatbotRepository',
+      'sendMessage completed',
+      <String, Object?>{
+        'normalized': normalized,
+        'reply': chatbotReply.reply,
+        'conversationId': chatbotReply.conversationId,
+      },
+    );
+    return chatbotReply;
   }
 }

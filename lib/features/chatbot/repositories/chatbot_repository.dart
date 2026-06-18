@@ -22,3 +22,7 @@ abstract class ChatbotRepository {
     Map<String, dynamic>? metadata,
   });
 }
+
+abstract interface class DisposableChatbotRepository {
+  Future<void> dispose();
+}
