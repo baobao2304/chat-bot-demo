@@ -48,13 +48,15 @@ with `--dart-define` for one-off testing.
 
 Verbose logs are enabled automatically outside release builds. Set
 `CHATBOT_VERBOSE_LOGS=false` to silence them, or `true` to force them on. API
-logs include request/response body and ready-to-copy cURL commands. Filter by
+logs include request/response body and ready-to-copy cURL commands. Each log
+event is enclosed by a border and separated by a blank line. Filter by
 `CHATBOT_LOG`; follow `seq`, `part=HEAD/DATA/CURL/ERROR/STACK`, and
 `phase=START/STEP/OK/FAIL` to see where the flow stopped.
 
 The native SDKs still require your backend to call `StartChatContact`; the app
-expects the sample response shape `data.startChatResult.ContactId`,
-`ParticipantId`, and `ParticipantToken`.
+expects `data.startChatResult.ContactId`, `ParticipantId`, and
+`ParticipantToken`. The optional `data.featurePermissions.MESSAGING_MARKDOWN`
+flag is also parsed.
 
 iOS requires CocoaPods and a minimum deployment target of iOS 15.0.
 

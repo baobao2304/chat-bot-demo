@@ -430,10 +430,15 @@ class AmazonConnectChatbotRepository
     Map<String, dynamic>? metadata,
   }) async {
     final uri = Uri.parse(startChatEndpoint);
-    final payload = _buildStartChatPayload(
+    final requestContract = _buildStartChatRequest(
       sourceContactId: sourceContactId,
       metadata: metadata,
     );
+    final payload = requestContract.toJson();
+    print('=== KIỂM TRA PAYLOAD TRƯỚC KHI GỬI ===');
+    print(jsonEncode(payload));
+    print('=== KIỂM TRA URL ===');
+    print(uri.toString());
     AppLogger.step(
       'AmazonConnectChatbotRepository',
       'StartChatContact backend request prepared',
@@ -463,9 +468,10 @@ class AmazonConnectChatbotRepository
       );
     }
 
-    final details = AmazonConnectStartChatResult.fromResponseBody(
+    final responseContract = AmazonConnectStartChatResponse.fromResponseBody(
       response.body,
-    ).toSessionDetails();
+    );
+    final details = responseContract.startChatResult.toSessionDetails();
     AppLogger.success(
       'AmazonConnectChatbotRepository',
       'StartChatContact parsed',
@@ -473,32 +479,30 @@ class AmazonConnectChatbotRepository
         'ContactId': details.contactId,
         'ParticipantId': details.participantId,
         'ParticipantToken': details.participantToken,
+        'featurePermissions': responseContract.featurePermissions?.toJson(),
       },
     );
     return details;
   }
 
-  Map<String, Object?> _buildStartChatPayload({
+  AmazonConnectStartChatRequest _buildStartChatRequest({
     String? sourceContactId,
     Map<String, dynamic>? metadata,
   }) {
     final attributes = _metadataToAttributes(metadata);
     final trimmedSourceContactId = sourceContactId?.trim();
 
-    return <String, Object?>{
-      'InstanceId': connectInstanceId,
-      'ContactFlowId': contactFlowId,
-      'ParticipantDetails': <String, Object?>{
-        'DisplayName': customerName.trim().isEmpty ? 'CUSTOMER' : customerName,
-      },
-      if (attributes.isNotEmpty) 'Attributes': attributes,
-      if (trimmedSourceContactId != null && trimmedSourceContactId.isNotEmpty)
-        'PersistentChat': <String, Object?>{
-          'SourceContactId': trimmedSourceContactId,
-          'RehydrationType': 'ENTIRE_PAST_SESSION',
-        },
-      'SupportedMessagingContentTypes': supportedMessagingContentTypes,
-    };
+    return AmazonConnectStartChatRequest(
+      instanceId: connectInstanceId,
+      contactFlowId: contactFlowId,
+      displayName: customerName.trim().isEmpty ? 'CUSTOMER' : customerName,
+      attributes: attributes,
+      sourceContactId:
+          trimmedSourceContactId != null && trimmedSourceContactId.isNotEmpty
+          ? trimmedSourceContactId
+          : null,
+      supportedMessagingContentTypes: supportedMessagingContentTypes,
+    );
   }
 
   void _handleTranscriptItem(AmazonConnectTranscriptItem item) {
@@ -781,6 +785,80 @@ class AmazonConnectChatbotRepository
   }
 }
 
+class AmazonConnectStartChatRequest {
+  const AmazonConnectStartChatRequest({
+    required this.instanceId,
+    required this.contactFlowId,
+    required this.displayName,
+    required this.supportedMessagingContentTypes,
+    this.attributes = const <String, String>{},
+    this.sourceContactId,
+  });
+
+  final String instanceId;
+  final String contactFlowId;
+  final String displayName;
+  final Map<String, String> attributes;
+  final String? sourceContactId;
+  final List<String> supportedMessagingContentTypes;
+
+  Map<String, Object?> toJson() {
+    return <String, Object?>{
+      'InstanceId': instanceId,
+      'ContactFlowId': contactFlowId,
+      'ParticipantDetails': <String, Object?>{'DisplayName': displayName},
+      if (attributes.isNotEmpty) 'Attributes': attributes,
+      if (sourceContactId != null)
+        'PersistentChat': <String, Object?>{
+          'SourceContactId': sourceContactId,
+          'RehydrationType': 'ENTIRE_PAST_SESSION',
+        },
+      'SupportedMessagingContentTypes': supportedMessagingContentTypes,
+    };
+  }
+}
+
+class AmazonConnectStartChatResponse {
+  const AmazonConnectStartChatResponse({
+    required this.startChatResult,
+    this.featurePermissions,
+  });
+
+  factory AmazonConnectStartChatResponse.fromResponseBody(String body) {
+    AppLogger.debug(
+      'AmazonConnectStartChatResponse',
+      'parse response body started',
+      <String, Object?>{'body': body},
+    );
+    final decoded = _decodeJsonMap(body);
+    final normalized = _unwrapLambdaProxyBody(decoded);
+    final result = _extractStartChatResult(normalized);
+    final data = _optionalMapFromValue(normalized['data']);
+    final permissions =
+        _optionalMapFromValue(data?['featurePermissions']) ??
+        _optionalMapFromValue(normalized['featurePermissions']);
+
+    AppLogger.debug(
+      'AmazonConnectStartChatResponse',
+      'response contract extracted',
+      <String, Object?>{
+        'startChatResult': result,
+        'featurePermissions': permissions,
+      },
+    );
+
+    return AmazonConnectStartChatResponse(
+      startChatResult: AmazonConnectStartChatResult.fromJson(result),
+      featurePermissions: permissions == null
+          ? null
+          : AmazonConnectFeaturePermissions.fromJson(permissions),
+    );
+  }
+
+  final AmazonConnectStartChatResult startChatResult;
+  final AmazonConnectFeaturePermissions? featurePermissions;
+}
+
 class AmazonConnectStartChatResult {
   const AmazonConnectStartChatResult({
     required this.contactId,
@@ -789,18 +867,12 @@ class AmazonConnectStartChatResult {
   });
 
   factory AmazonConnectStartChatResult.fromResponseBody(String body) {
-    AppLogger.debug(
-      'AmazonConnectStartChatResult',
-      'parse response body started',
-      <String, Object?>{'body': body},
-    );
-    final decoded = _decodeJsonMap(body);
-    final result = _extractStartChatResult(decoded);
-    AppLogger.debug(
-      'AmazonConnectStartChatResult',
-      'extracted start chat result',
-      <String, Object?>{'decoded': decoded, 'result': result},
-    );
+    return AmazonConnectStartChatResponse.fromResponseBody(
+      body,
+    ).startChatResult;
+  }
+
+  factory AmazonConnectStartChatResult.fromJson(Map<String, Object?> result) {
     final contactId = _readString(result, 'ContactId', 'contactId');
     final participantId = _readString(result, 'ParticipantId', 'participantId');
     final participantToken = _readString(
@@ -847,6 +919,23 @@ class AmazonConnectStartChatResult {
   }
 }
 
+class AmazonConnectFeaturePermissions {
+  const AmazonConnectFeaturePermissions({required this.messagingMarkdown});
+
+  factory AmazonConnectFeaturePermissions.fromJson(Map<String, Object?> json) {
+    final messagingMarkdown = json['MESSAGING_MARKDOWN'];
+    return AmazonConnectFeaturePermissions(
+      messagingMarkdown: messagingMarkdown is bool ? messagingMarkdown : null,
+    );
+  }
+
+  final bool? messagingMarkdown;
+
+  Map<String, Object?> toJson() {
+    return <String, Object?>{'MESSAGING_MARKDOWN': messagingMarkdown};
+  }
+}
+
 Map<String, Object?> _decodeJsonMap(String body) {
   AppLogger.trace('AmazonConnectStartChatResult', 'decode json map', body);
   final decoded = jsonDecode(body);
@@ -854,11 +943,6 @@ Map<String, Object?> _decodeJsonMap(String body) {
 }
 
 Map<String, Object?> _extractStartChatResult(Map<String, Object?> decoded) {
-  final body = decoded['body'];
-  if (body is String && body.trim().isNotEmpty) {
-    return _extractStartChatResult(_decodeJsonMap(body));
-  }
-
   final data = _optionalMapFromValue(decoded['data']);
   if (data != null) {
     final nested =
@@ -877,6 +961,14 @@ Map<String, Object?> _extractStartChatResult(Map<String, Object?> decoded) {
       _optionalMapFromValue(decoded['StartChatContactResult']) ??
       data ??
       decoded;
+}
+
+Map<String, Object?> _unwrapLambdaProxyBody(Map<String, Object?> decoded) {
+  final body = decoded['body'];
+  if (body is String && body.trim().isNotEmpty) {
+    return _unwrapLambdaProxyBody(_decodeJsonMap(body));
+  }
+  return decoded;
 }
 
 Map<String, Object?> _mapFromValue(Object? value) {

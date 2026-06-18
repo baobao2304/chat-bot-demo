@@ -205,7 +205,7 @@ class _PlainAppLogPrinter extends LogPrinter {
   List<String> log(LogEvent event) {
     final record = event.message;
     if (record is! _AppLogRecord) {
-      return <String>[
+      return _withBorder(0, <String>[
         _formatBaseLine(
           event: event,
           sequence: 0,
@@ -213,7 +213,7 @@ class _PlainAppLogPrinter extends LogPrinter {
           tag: 'AppLogger',
           message: record.toString(),
         ),
-      ];
+      ]);
     }
 
     final base = _formatBaseLine(
@@ -265,7 +265,17 @@ class _PlainAppLogPrinter extends LogPrinter {
       );
     }
 
-    return lines;
+    return _withBorder(record.sequence, lines);
+  }
+
+  List<String> _withBorder(int sequence, List<String> lines) {
+    final id = sequence.toString().padLeft(5, '0');
+    return <String>[
+      '+==================== CHATBOT_LOG #$id ====================+',
+      ...lines,
+      '+------------------------------------------------------------+',
+      '',
+    ];
   }
 
   String _formatBaseLine({

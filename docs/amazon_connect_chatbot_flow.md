@@ -341,13 +341,23 @@ Minimum successful backend response:
 
 ```json
 {
-  "ContactId": "contact-id",
-  "ParticipantId": "participant-id",
-  "ParticipantToken": "participant-token"
+  "data": {
+    "startChatResult": {
+      "ContactId": "contact-id",
+      "ParticipantId": "participant-id",
+      "ParticipantToken": "participant-token"
+    },
+    "featurePermissions": {
+      "MESSAGING_MARKDOWN": false
+    }
+  }
 }
 ```
 
-Lambda proxy style is also accepted:
+Legacy direct and Lambda proxy response styles are also accepted for backward
+compatibility.
+
+Lambda proxy example:
 
 ```json
 {
